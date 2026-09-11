@@ -20,6 +20,24 @@ const {
 } = require("./config");
 
 // =====================================================
+// RENDER HTTP SERVER
+// =====================================================
+
+const http = require("http");
+
+const PORT = process.env.PORT || 10000;
+
+http.createServer((req, res) => {
+  res.writeHead(200, {
+    "Content-Type": "text/plain"
+  });
+
+  res.end("MoonShotSMP Bot is online!");
+}).listen(PORT, () => {
+  console.log(`🌐 HTTP server running on port ${PORT}`);
+});
+
+// =====================================================
 // CONFIG
 // =====================================================
 
@@ -187,7 +205,11 @@ function formatUptime(seconds) {
 // GET VALUE SAFELY
 // =====================================================
 
-function getValue(object, paths, fallback = "N/A") {
+function getValue(
+  object,
+  paths,
+  fallback = "N/A"
+) {
   for (const path of paths) {
     const parts = path.split(".");
 
@@ -278,7 +300,10 @@ function getServerState(status) {
 // PLAYER COUNT
 // =====================================================
 
-function getPlayerCount(status, server) {
+function getPlayerCount(
+  status,
+  server
+) {
   const online = getValue(
     status,
     [
@@ -564,7 +589,7 @@ async function registerCommands() {
 // =====================================================
 
 client.once(
-  "ready",
+  "clientReady",
   async () => {
 
     console.log(
