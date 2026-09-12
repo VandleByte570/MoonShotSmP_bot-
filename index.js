@@ -194,7 +194,7 @@ function normalizeState(status) {
 
   const stoppingStates = new Set(["stopping", "shutting_down", "shutdown", "pending_stop"]);
 
-  const offlineStates = new Set(["offline", "stopped", "dead", "crashed", "failed", "terminated"]);
+  const offlineStates = new Set(["offline", "stopped", "dead", "crashed", "failed", "terminated", "storage"]);
 
   if (onlineStates.has(state)) return "online";
   if (startingStates.has(state)) return "starting";
