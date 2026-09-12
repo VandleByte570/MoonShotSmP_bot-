@@ -1163,27 +1163,37 @@ process.on("unhandledRejection", error => {
   console.error("Unhandled rejection:", error);
 });
 
-process.on("uncaughtException", error => {
+process.on("uncaughtException", async error => {
   console.error("Uncaught exception:", error);
-  process.exit(1);
+  await shutdown("UNCAUGHT_EXCEPTION");
 });
 
 // =====================================================
 // SHUTDOWN
 // =====================================================
 
+let shuttingDown = false;
+
 async function shutdown(signal) {
+  if (shuttingDown) return;
+
+  shuttingDown = true;
+
   console.log(`Received ${signal}. Shutting down...`);
 
   try {
     httpServer.close();
-  } catch {}
+  } catch (error) {
+    console.error("HTTP server shutdown error:", error);
+  }
 
   try {
     client.destroy();
-  } catch {}
+  } catch (error) {
+    console.error("Discord shutdown error:", error);
+  }
 
-  process.exit(0);
+  process.exit(signal === "UNCAUGHT_EXCEPTION" ? 1 : 0);
 }
 
 process.on("SIGINT", () => shutdown("SIGINT"));
