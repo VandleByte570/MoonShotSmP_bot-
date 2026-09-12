@@ -44,10 +44,21 @@ const PORT =
 
 const missing = [];
 
-if (!token) missing.push("DISCORD_TOKEN");
-if (!falixKey) missing.push("FALIX_API_KEY");
-if (!serverId) missing.push("FALIX_SERVER_ID");
-if (!openRouterKey) missing.push("OPENROUTER_API_KEY");
+if (!token) {
+  missing.push("DISCORD_TOKEN");
+}
+
+if (!falixKey) {
+  missing.push("FALIX_API_KEY");
+}
+
+if (!serverId) {
+  missing.push("FALIX_SERVER_ID");
+}
+
+if (!openRouterKey) {
+  missing.push("OPENROUTER_API_KEY");
+}
 
 if (missing.length > 0) {
   throw new Error(
@@ -78,35 +89,47 @@ const client = new Client({
 // HTTP SERVER
 // =====================================================
 
-const httpServer = http.createServer((req, res) => {
-  if (req.url === "/health") {
+const httpServer = http.createServer(
+  (req, res) => {
+    if (req.url === "/health") {
+      res.writeHead(200, {
+        "Content-Type":
+          "application/json; charset=utf-8"
+      });
+
+      res.end(
+        JSON.stringify({
+          status: "ok",
+          service: "MoonShotSMP Bot",
+          discord: client.isReady()
+            ? "connected"
+            : "connecting"
+        })
+      );
+
+      return;
+    }
+
     res.writeHead(200, {
-      "Content-Type": "application/json; charset=utf-8"
+      "Content-Type":
+        "text/plain; charset=utf-8"
     });
 
     res.end(
-      JSON.stringify({
-        status: "ok",
-        service: "MoonShotSMP Bot",
-        discord: client.isReady()
-          ? "connected"
-          : "connecting"
-      })
+      "MoonShotSMP Bot is online!"
     );
-
-    return;
   }
+);
 
-  res.writeHead(200, {
-    "Content-Type": "text/plain; charset=utf-8"
-  });
-
-  res.end("MoonShotSMP Bot is online!");
-});
-
-httpServer.listen(PORT, "0.0.0.0", () => {
-  console.log(`🌐 HTTP server listening on port ${PORT}`);
-});
+httpServer.listen(
+  PORT,
+  "0.0.0.0",
+  () => {
+    console.log(
+      `🌐 HTTP server listening on port ${PORT}`
+    );
+  }
+);
 
 // =====================================================
 // SAFE VALUE GETTER
@@ -118,7 +141,8 @@ function getValue(
   fallback = "N/A"
 ) {
   for (const path of paths) {
-    const parts = path.split(".");
+    const parts =
+      path.split(".");
 
     let value = object;
 
@@ -145,6 +169,7 @@ function getValue(
 
   return fallback;
 }
+
 // =====================================================
 // STRING TRUNCATE
 // =====================================================
@@ -162,13 +187,21 @@ function truncate(
     return fallback;
   }
 
-  const text = String(value);
+  const text =
+    String(value);
 
-  if (text.length <= maxLength) {
+  if (
+    text.length <= maxLength
+  ) {
     return text;
   }
 
-  return text.slice(0, maxLength - 3) + "...";
+  return (
+    text.slice(
+      0,
+      maxLength - 3
+    ) + "..."
+  );
 }
 
 // =====================================================
@@ -182,35 +215,54 @@ async function falixRequest(
   const url =
     `${FALIX_API}${endpoint}`;
 
-  console.log("================================");
-  console.log("🌐 FALIX API REQUEST");
-  console.log("Endpoint:", endpoint);
-  console.log("Method:", options.method || "GET");
-  console.log("================================");
+  console.log(
+    "================================"
+  );
+
+  console.log(
+    "🌐 FALIX API REQUEST"
+  );
+
+  console.log(
+    "URL:",
+    url
+  );
+
+  console.log(
+    "Method:",
+    options.method || "GET"
+  );
+
+  console.log(
+    "================================"
+  );
 
   let response;
 
   try {
-    response = await fetch(url, {
-      ...options,
+    response = await fetch(
+      url,
+      {
+        ...options,
 
-      headers: {
-        Authorization:
-          `Bearer ${falixKey}`,
+        headers: {
+          Authorization:
+            `Bearer ${falixKey}`,
 
-        Accept:
-          "application/json",
+          Accept:
+            "application/json",
 
-        ...(options.body
-          ? {
-              "Content-Type":
-                "application/json"
-            }
-          : {}),
+          ...(options.body
+            ? {
+                "Content-Type":
+                  "application/json"
+              }
+            : {}),
 
-        ...(options.headers || {})
+          ...(options.headers || {})
+        }
       }
-    });
+    );
   } catch (error) {
     console.error(
       "❌ Falix network error:"
@@ -235,17 +287,24 @@ async function falixRequest(
   let data = {};
 
   try {
-    data = rawText
-      ? JSON.parse(rawText)
-      : {};
+    data =
+      rawText
+        ? JSON.parse(rawText)
+        : {};
   } catch {
     data = {
       raw: rawText
     };
   }
 
-  console.log("================================");
-  console.log("📡 FALIX API RESPONSE");
+  console.log(
+    "================================"
+  );
+
+  console.log(
+    "📡 FALIX API RESPONSE"
+  );
+
   console.log(
     "HTTP STATUS:",
     response.status
@@ -260,7 +319,9 @@ async function falixRequest(
     )
   );
 
-  console.log("================================");
+  console.log(
+    "================================"
+  );
 
   if (!response.ok) {
     const error =
@@ -268,7 +329,8 @@ async function falixRequest(
         data?.error?.message ||
         data?.message ||
         (
-          typeof data?.error === "string"
+          typeof data?.error ===
+          "string"
             ? data.error
             : null
         ) ||
@@ -343,7 +405,9 @@ async function getServerStatus() {
 // RAW SERVER STATE
 // =====================================================
 
-function getRawServerState(status) {
+function getRawServerState(
+  status
+) {
   const state =
     getValue(
       status,
@@ -354,7 +418,7 @@ function getRawServerState(status) {
         "current_state",
         "lifecycle_status.state"
       ],
-      "offline"
+      "unknown"
     );
 
   return String(state)
@@ -366,7 +430,9 @@ function getRawServerState(status) {
 // STATE CHECK HELPERS
 // =====================================================
 
-function isOnlineState(state) {
+function isOnlineState(
+  state
+) {
   return [
     "online",
     "running",
@@ -374,7 +440,9 @@ function isOnlineState(state) {
   ].includes(state);
 }
 
-function isOfflineState(state) {
+function isOfflineState(
+  state
+) {
   return [
     "offline",
     "stopped",
@@ -383,7 +451,9 @@ function isOfflineState(state) {
   ].includes(state);
 }
 
-function isStartingState(state) {
+function isStartingState(
+  state
+) {
   return [
     "starting",
     "booting",
@@ -392,18 +462,33 @@ function isStartingState(state) {
   ].includes(state);
 }
 
-function isStoppingState(state) {
+function isStoppingState(
+  state
+) {
   return [
     "stopping",
     "shutting_down"
   ].includes(state);
 }
 
+function isKnownState(
+  state
+) {
+  return (
+    isOnlineState(state) ||
+    isOfflineState(state) ||
+    isStartingState(state) ||
+    isStoppingState(state)
+  );
+}
+
 // =====================================================
 // POWER SERVER
 // =====================================================
 
-async function powerServer(action) {
+async function powerServer(
+  action
+) {
   const validActions = [
     "start",
     "stop",
@@ -440,9 +525,10 @@ async function powerServer(action) {
             idempotencyKey
         },
 
-        body: JSON.stringify({
-          signal: action
-        })
+        body:
+          JSON.stringify({
+            signal: action
+          })
       }
     );
 
@@ -473,7 +559,9 @@ async function smartRestart() {
     rawState
   );
 
-  if (isOfflineState(rawState)) {
+  if (
+    isOfflineState(rawState)
+  ) {
     console.log(
       "🔴 Server offline. Using START."
     );
@@ -482,11 +570,15 @@ async function smartRestart() {
       actualAction: "start",
 
       result:
-        await powerServer("start")
+        await powerServer(
+          "start"
+        )
     };
   }
 
-  if (isStartingState(rawState)) {
+  if (
+    isStartingState(rawState)
+  ) {
     const error =
       new Error(
         "Server is already starting."
@@ -498,7 +590,9 @@ async function smartRestart() {
     throw error;
   }
 
-  if (isStoppingState(rawState)) {
+  if (
+    isStoppingState(rawState)
+  ) {
     const error =
       new Error(
         "Server is currently stopping."
@@ -510,11 +604,28 @@ async function smartRestart() {
     throw error;
   }
 
+  if (
+    !isKnownState(rawState)
+  ) {
+    const error =
+      new Error(
+        `Unknown Falix server state: ${rawState}`
+      );
+
+    error.code =
+      "unknown_state";
+
+    throw error;
+  }
+
   return {
-    actualAction: "restart",
+    actualAction:
+      "restart",
 
     result:
-      await powerServer("restart")
+      await powerServer(
+        "restart"
+      )
   };
 }
 
@@ -522,7 +633,9 @@ async function smartRestart() {
 // FORMAT UPTIME
 // =====================================================
 
-function formatUptime(seconds) {
+function formatUptime(
+  seconds
+) {
   if (
     seconds === undefined ||
     seconds === null
@@ -531,7 +644,9 @@ function formatUptime(seconds) {
   }
 
   seconds =
-    Math.floor(Number(seconds));
+    Math.floor(
+      Number(seconds)
+    );
 
   if (
     Number.isNaN(seconds) ||
@@ -565,22 +680,30 @@ function formatUptime(seconds) {
   const parts = [];
 
   if (days > 0) {
-    parts.push(`${days}d`);
+    parts.push(
+      `${days}d`
+    );
   }
 
   if (hours > 0) {
-    parts.push(`${hours}h`);
+    parts.push(
+      `${hours}h`
+    );
   }
 
   if (minutes > 0) {
-    parts.push(`${minutes}m`);
+    parts.push(
+      `${minutes}m`
+    );
   }
 
   if (
     parts.length === 0 ||
     secs > 0
   ) {
-    parts.push(`${secs}s`);
+    parts.push(
+      `${secs}s`
+    );
   }
 
   return parts.join(" ");
@@ -590,11 +713,15 @@ function formatUptime(seconds) {
 // SERVER STATE DISPLAY
 // =====================================================
 
-function getServerState(status) {
+function getServerState(
+  status
+) {
   const state =
     getRawServerState(status);
 
-  if (isOnlineState(state)) {
+  if (
+    isOnlineState(state)
+  ) {
     return {
       emoji: "🟢",
       text: "ONLINE",
@@ -602,7 +729,9 @@ function getServerState(status) {
     };
   }
 
-  if (isStartingState(state)) {
+  if (
+    isStartingState(state)
+  ) {
     return {
       emoji: "🟡",
       text: "STARTING",
@@ -610,7 +739,9 @@ function getServerState(status) {
     };
   }
 
-  if (isStoppingState(state)) {
+  if (
+    isStoppingState(state)
+  ) {
     return {
       emoji: "🟠",
       text: "STOPPING",
@@ -618,7 +749,9 @@ function getServerState(status) {
     };
   }
 
-  if (isOfflineState(state)) {
+  if (
+    isOfflineState(state)
+  ) {
     return {
       emoji: "🔴",
       text: "OFFLINE",
@@ -665,14 +798,17 @@ function getPlayerCount(
 
   if (
     online === null &&
-    typeof status?.players === "number"
+    typeof status?.players ===
+      "number"
   ) {
-    online = status.players;
+    online =
+      status.players;
   }
 
   if (
     online === null &&
-    typeof status?.players === "object"
+    typeof status?.players ===
+      "object"
   ) {
     online =
       status.players.online ??
@@ -682,7 +818,8 @@ function getPlayerCount(
 
   if (
     max === null &&
-    typeof status?.players === "object"
+    typeof status?.players ===
+      "object"
   ) {
     max =
       status.players.max ??
@@ -690,9 +827,7 @@ function getPlayerCount(
       null;
   }
 
-  if (
-    max === null
-  ) {
+  if (max === null) {
     max =
       getValue(
         server,
@@ -718,7 +853,9 @@ function getPlayerCount(
       maxNumber
     )
   ) {
-    return `${onlineNumber} / ${maxNumber}`;
+    return (
+      `${onlineNumber} / ${maxNumber}`
+    );
   }
 
   if (
@@ -735,7 +872,9 @@ function getPlayerCount(
 // SERVER ADDRESS
 // =====================================================
 
-function getServerAddress(server) {
+function getServerAddress(
+  server
+) {
   return getValue(
     server,
     [
@@ -842,17 +981,16 @@ async function buildPanel() {
 
   const embed =
     new EmbedBuilder()
-      .setColor(state.color)
-
+      .setColor(
+        state.color
+      )
       .setTitle(
         `🚀 ${serverName} Server Control Panel`
       )
-
       .setDescription(
         `${state.emoji} **${state.text}**\n` +
         `━━━━━━━━━━━━━━━━━━━━`
       )
-
       .addFields(
         {
           name:
@@ -900,12 +1038,10 @@ async function buildPanel() {
           inline: false
         }
       )
-
       .setFooter({
         text:
           "MoonShotSMP • Falix Minecraft Server"
       })
-
       .setTimestamp();
 
   const row =
@@ -992,7 +1128,6 @@ async function refreshPanelMessage(
     return true;
 
   } catch (error) {
-
     console.error(
       "❌ Panel refresh failed:"
     );
@@ -1007,7 +1142,9 @@ async function refreshPanelMessage(
 // OPENROUTER AI
 // =====================================================
 
-async function askAI(question) {
+async function askAI(
+  question
+) {
   console.log(
     "🤖 Sending question to OpenRouter..."
   );
@@ -1035,37 +1172,43 @@ async function askAI(question) {
               "MoonShotSMP Discord Bot"
           },
 
-          body: JSON.stringify({
-            model:
-              aiModel,
+          body:
+            JSON.stringify({
+              model:
+                aiModel,
 
-            messages: [
-              {
-                role: "system",
+              messages: [
+                {
+                  role:
+                    "system",
 
-                content:
-                  "You are MoonShotSMP's Discord AI assistant. " +
-                  "Be helpful, friendly and concise. " +
-                  "Answer in casual Hinglish when appropriate. " +
-                  "Do not claim to know live Minecraft server status " +
-                  "unless the bot explicitly provides that information."
-              },
+                  content:
+                    "You are MoonShotSMP's Discord AI assistant. " +
+                    "Be helpful, friendly and concise. " +
+                    "Answer in casual Hinglish when appropriate. " +
+                    "Do not claim to know live Minecraft server status " +
+                    "unless the bot explicitly provides that information."
+                },
 
-              {
-                role: "user",
-                content: question
-              }
-            ],
+                {
+                  role:
+                    "user",
 
-            temperature: 0.7,
+                  content:
+                    question
+                }
+              ],
 
-            max_tokens: 500
-          })
+              temperature:
+                0.7,
+
+              max_tokens:
+                500
+            })
         }
       );
 
   } catch (error) {
-
     console.error(
       "❌ OpenRouter network error:"
     );
@@ -1089,9 +1232,10 @@ async function askAI(question) {
   let data = {};
 
   try {
-    data = rawText
-      ? JSON.parse(rawText)
-      : {};
+    data =
+      rawText
+        ? JSON.parse(rawText)
+        : {};
   } catch {
     data = {
       raw: rawText
@@ -1099,7 +1243,6 @@ async function askAI(question) {
   }
 
   if (!response.ok) {
-
     console.error(
       "❌ OpenRouter error:"
     );
@@ -1144,14 +1287,18 @@ async function askAI(question) {
     "✅ OpenRouter response received."
   );
 
-  return String(answer).trim();
+  return String(
+    answer
+  ).trim();
 }
 
 // =====================================================
 // ANSWER QUESTION
 // =====================================================
 
-async function answerQuestion(question) {
+async function answerQuestion(
+  question
+) {
   const q =
     question
       .toLowerCase()
@@ -1167,9 +1314,7 @@ async function answerQuestion(question) {
     q.includes("server online") ||
     q.includes("is the server online")
   ) {
-
     try {
-
       const [
         server,
         status
@@ -1197,7 +1342,6 @@ async function answerQuestion(question) {
       };
 
     } catch (error) {
-
       console.error(
         "❌ Status request failed:"
       );
@@ -1225,14 +1369,14 @@ async function answerQuestion(question) {
     q.includes("minecraft ip") ||
     q.includes("how do i connect")
   ) {
-
     try {
-
       const server =
         await getServerInfo();
 
       const address =
-        getServerAddress(server);
+        getServerAddress(
+          server
+        );
 
       return {
         title:
@@ -1246,7 +1390,6 @@ async function answerQuestion(question) {
       };
 
     } catch (error) {
-
       console.error(
         "❌ Address request failed:"
       );
@@ -1272,7 +1415,6 @@ async function answerQuestion(question) {
     q === "commands" ||
     q.includes("what commands")
   ) {
-
     return {
       title:
         "🤖 MoonShotSMP Help",
@@ -1289,7 +1431,9 @@ async function answerQuestion(question) {
   // ===================================================
 
   const aiAnswer =
-    await askAI(question);
+    await askAI(
+      question
+    );
 
   return {
     title:
@@ -1305,7 +1449,6 @@ async function answerQuestion(question) {
 // =====================================================
 
 async function registerCommands() {
-
   const commands = [
 
     new SlashCommandBuilder()
@@ -1394,11 +1537,8 @@ client.once(
     );
 
     try {
-
       await registerCommands();
-
     } catch (error) {
-
       console.error(
         "❌ Command registration failed:"
       );
@@ -1440,7 +1580,6 @@ client.on(
               PermissionFlagsBits.ManageGuild
             )
           ) {
-
             await interaction.reply({
               content:
                 "🔒 **You need Manage Server permission to use `/panel`.**",
@@ -1453,7 +1592,6 @@ client.on(
           await interaction.deferReply();
 
           try {
-
             const panel =
               await buildPanel();
 
@@ -1462,7 +1600,6 @@ client.on(
             );
 
           } catch (error) {
-
             console.error(
               "❌ Panel error:"
             );
@@ -1507,9 +1644,9 @@ client.on(
               "No response.";
 
             if (
-              description.length > 4096
+              description.length >
+              4096
             ) {
-
               description =
                 description.slice(
                   0,
@@ -1558,37 +1695,37 @@ client.on(
               "❌ **AI request failed.**";
 
             if (
-              error.httpStatus === 401
+              error.httpStatus ===
+              401
             ) {
-
               message =
                 "❌ **OpenRouter API key is invalid or expired.**";
 
             } else if (
-              error.httpStatus === 402
+              error.httpStatus ===
+              402
             ) {
-
               message =
                 "❌ **The selected OpenRouter model/provider is currently unavailable for this request.**";
 
             } else if (
-              error.httpStatus === 403
+              error.httpStatus ===
+              403
             ) {
-
               message =
                 "🔒 **OpenRouter rejected the request. Check your API key permissions.**";
 
             } else if (
-              error.httpStatus === 429
+              error.httpStatus ===
+              429
             ) {
-
               message =
                 "⏳ **OpenRouter rate limit reached.**\nPlease try again later.";
 
             } else if (
-              error.httpStatus >= 500
+              error.httpStatus >=
+              500
             ) {
-
               message =
                 "🔴 **OpenRouter is having a server-side problem.**";
 
@@ -1596,7 +1733,6 @@ client.on(
               error.code ===
               "openrouter_network_error"
             ) {
-
               message =
                 "🌐 **Could not connect to OpenRouter.**";
             }
@@ -1637,7 +1773,6 @@ client.on(
           PermissionFlagsBits.ManageGuild
         )
       ) {
-
         await interaction.reply({
           content:
             "🔒 **You need Manage Server permission to use this control panel.**",
@@ -1684,7 +1819,6 @@ client.on(
       // =================================================
 
       const actions = {
-
         minecraft_start:
           "start",
 
@@ -1708,8 +1842,9 @@ client.on(
       // DOUBLE REQUEST PROTECTION
       // =================================================
 
-      if (powerActionRunning) {
-
+      if (
+        powerActionRunning
+      ) {
         await interaction.reply({
           content:
             "⏳ Another server power action is already running. Please wait.",
@@ -1757,7 +1892,6 @@ client.on(
               currentState
             )
           ) {
-
             await interaction.editReply({
               content:
                 "🟢 **Server is already online.**"
@@ -1771,7 +1905,6 @@ client.on(
               currentState
             )
           ) {
-
             await interaction.editReply({
               content:
                 "🟡 **Server is already starting.**\n\nPlease wait for Falix."
@@ -1785,10 +1918,22 @@ client.on(
               currentState
             )
           ) {
-
             await interaction.editReply({
               content:
                 "🟠 **Server is currently stopping.**\n\nWait for it to finish stopping."
+            });
+
+            return;
+          }
+
+          if (
+            !isOfflineState(
+              currentState
+            )
+          ) {
+            await interaction.editReply({
+              content:
+                `⚪ **Falix returned an unknown server state:** \`${currentState}\`\n\nThe bot will not send a power request to avoid doing the wrong action.`
             });
 
             return;
@@ -1825,7 +1970,6 @@ client.on(
               currentState
             )
           ) {
-
             await interaction.editReply({
               content:
                 "🔴 **Server is already offline.**"
@@ -1839,7 +1983,6 @@ client.on(
               currentState
             )
           ) {
-
             await interaction.editReply({
               content:
                 "🟠 **Server is already stopping.**"
@@ -1853,10 +1996,22 @@ client.on(
               currentState
             )
           ) {
-
             await interaction.editReply({
               content:
                 "🟡 **Server is currently starting.**\n\nWait until it finishes starting before stopping it."
+            });
+
+            return;
+          }
+
+          if (
+            !isOnlineState(
+              currentState
+            )
+          ) {
+            await interaction.editReply({
+              content:
+                `⚪ **Falix returned an unknown server state:** \`${currentState}\`\n\nThe bot will not send a power request to avoid doing the wrong action.`
             });
 
             return;
@@ -1899,7 +2054,6 @@ client.on(
         const panelMessage =
           interaction.message;
 
-        // First refresh
         setTimeout(
           async () => {
             await refreshPanelMessage(
@@ -1909,7 +2063,6 @@ client.on(
           5000
         );
 
-        // Second refresh for startup/shutdown
         setTimeout(
           async () => {
             await refreshPanelMessage(
@@ -1943,16 +2096,18 @@ client.on(
           "Unknown"
         );
 
-        if (error.requestId) {
-
+        if (
+          error.requestId
+        ) {
           console.error(
             "Falix Request ID:",
             error.requestId
           );
         }
 
-        if (error.response) {
-
+        if (
+          error.response
+        ) {
           console.error(
             "Falix Response:",
             JSON.stringify(
@@ -1982,14 +2137,13 @@ client.on(
           if (
             error.actionUrl
           ) {
-
             message +=
               `\n\n🔗 ${error.actionUrl}`;
           }
         }
 
         // =============================================
-        // FREE PLAN RESTRICTED
+        // FREE PLAN
         // =============================================
 
         else if (
@@ -2008,7 +2162,8 @@ client.on(
         else if (
           error.code ===
             "unauthorized" ||
-          error.httpStatus === 401
+          error.httpStatus ===
+            401
         ) {
 
           message =
@@ -2044,18 +2199,36 @@ client.on(
         }
 
         // =============================================
+        // UNKNOWN STATE
+        // =============================================
+
+        else if (
+          error.code ===
+          "unknown_state"
+        ) {
+
+          message =
+            "⚪ **Falix returned an unknown server state.**\n\n" +
+            `State: \`${truncate(
+              error.message,
+              500
+            )}\``;
+        }
+
+        // =============================================
         // FORBIDDEN
         // =============================================
 
         else if (
           error.code ===
             "forbidden" ||
-          error.httpStatus === 403
+          error.httpStatus ===
+            403
         ) {
 
           message =
             "🔒 **Falix rejected the request.**\n\n" +
-            "Check that your API key has the required server permissions.";
+            "Check that your API key has permission to control this server.";
         }
 
         // =============================================
@@ -2078,7 +2251,8 @@ client.on(
         else if (
           error.code ===
             "not_found" ||
-          error.httpStatus === 404
+          error.httpStatus ===
+            404
         ) {
 
           message =
@@ -2106,7 +2280,8 @@ client.on(
         else if (
           error.code ===
             "rate_limit_exceeded" ||
-          error.httpStatus === 429
+          error.httpStatus ===
+            429
         ) {
 
           message =
@@ -2119,7 +2294,8 @@ client.on(
         // =============================================
 
         else if (
-          error.httpStatus === 400
+          error.httpStatus ===
+          400
         ) {
 
           message =
@@ -2135,7 +2311,8 @@ client.on(
         // =============================================
 
         else if (
-          error.httpStatus >= 500
+          error.httpStatus >=
+          500
         ) {
 
           message =
@@ -2216,7 +2393,6 @@ client.on(
 client.on(
   "error",
   error => {
-
     console.error(
       "❌ Discord error:"
     );
@@ -2232,7 +2408,6 @@ client.on(
 client.on(
   "warn",
   warning => {
-
     console.warn(
       "⚠️ Discord warning:",
       warning
@@ -2247,7 +2422,6 @@ client.on(
 process.on(
   "unhandledRejection",
   error => {
-
     console.error(
       "❌ Unhandled rejection:"
     );
@@ -2263,7 +2437,6 @@ process.on(
 process.on(
   "uncaughtException",
   error => {
-
     console.error(
       "❌ Uncaught exception:"
     );
@@ -2278,8 +2451,9 @@ process.on(
 // GRACEFUL SHUTDOWN
 // =====================================================
 
-async function shutdown(signal) {
-
+async function shutdown(
+  signal
+) {
   console.log(
     `🛑 Received ${signal}. Shutting down...`
   );
@@ -2297,12 +2471,14 @@ async function shutdown(signal) {
 
 process.on(
   "SIGINT",
-  () => shutdown("SIGINT")
+  () =>
+    shutdown("SIGINT")
 );
 
 process.on(
   "SIGTERM",
-  () => shutdown("SIGTERM")
+  () =>
+    shutdown("SIGTERM")
 );
 
 // =====================================================
@@ -2313,7 +2489,8 @@ console.log(
   "🔄 Connecting to Discord..."
 );
 
-client.login(token)
+client
+  .login(token)
   .catch(error => {
 
     console.error(
