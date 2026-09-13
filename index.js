@@ -237,7 +237,7 @@ function normalizeState(status) {
     "dead",
     "crashed",
     "failed",
-    "terminated"
+    "terminated",
     "storage"
   ]);
 
