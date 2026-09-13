@@ -238,6 +238,7 @@ function normalizeState(status) {
     "crashed",
     "failed",
     "terminated"
+    "storage"
   ]);
 
   if (onlineStates.has(state)) return "online";
