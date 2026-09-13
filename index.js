@@ -164,22 +164,54 @@ function formatUptime(seconds) {
 // =====================================================
 
 function normalizeState(status) {
-  const raw = getValue(
+  if (!status || typeof status !== "object") {
+    return "unknown";
+  }
+
+  let raw = getValue(
     status,
     [
       "state",
       "status",
       "server_state",
-      "current_state",
-      "lifecycle_status.state",
-      "lifecycle_status"
+      "current_state"
     ],
-    "unknown"
+    null
   );
 
-  const state = String(raw).toLowerCase().trim().replace(/[-\s]+/g, "_");
+  // Handle lifecycle_status safely
+  if (raw == null) {
+    const lifecycle = status.lifecycle_status;
 
-  const onlineStates = new Set(["online", "running", "started", "ready", "active"]);
+    if (typeof lifecycle === "string") {
+      raw = lifecycle;
+    } else if (lifecycle && typeof lifecycle === "object") {
+      raw =
+        lifecycle.state ??
+        lifecycle.status ??
+        lifecycle.name ??
+        lifecycle.value ??
+        lifecycle.current_state ??
+        null;
+    }
+  }
+
+  if (raw == null) {
+    return "unknown";
+  }
+
+  const state = String(raw)
+    .toLowerCase()
+    .trim()
+    .replace(/[-\s]+/g, "_");
+
+  const onlineStates = new Set([
+    "online",
+    "running",
+    "started",
+    "ready",
+    "active"
+  ]);
 
   const startingStates = new Set([
     "starting",
@@ -192,9 +224,21 @@ function normalizeState(status) {
     "pending_start"
   ]);
 
-  const stoppingStates = new Set(["stopping", "shutting_down", "shutdown", "pending_stop"]);
+  const stoppingStates = new Set([
+    "stopping",
+    "shutting_down",
+    "shutdown",
+    "pending_stop"
+  ]);
 
-  const offlineStates = new Set(["offline", "stopped", "dead", "crashed", "failed", "terminated", "storage"]);
+  const offlineStates = new Set([
+    "offline",
+    "stopped",
+    "dead",
+    "crashed",
+    "failed",
+    "terminated"
+  ]);
 
   if (onlineStates.has(state)) return "online";
   if (startingStates.has(state)) return "starting";
