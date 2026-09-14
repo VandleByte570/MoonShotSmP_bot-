@@ -21,6 +21,7 @@ const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const FALIX_API_KEY = process.env.FALIX_API_KEY;
 const FALIX_SERVER_ID = process.env.FALIX_SERVER_ID;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const MINECRAFT_ADDRESS = "moonshotsmp.falixsrv.me:20175";
 
 const AI_MODEL = process.env.AI_MODEL || "openrouter/free";
 const PORT = Number(process.env.PORT) || 10000;
@@ -518,8 +519,8 @@ async function buildPanel() {
 
   const version = truncate(getVersion(server, status), 100);
 
-  const address = truncate(String(getAddress(server, status)).replace(/`/g, "'"), 1000);
-
+  const address = MINECRAFT_ADDRESS;
+  
   const uptime = getValue(status, ["uptime", "uptime_seconds"], null);
 
   let uptimeText = "Server is offline";
@@ -763,7 +764,7 @@ async function answerQuestion(question) {
 
       return {
         title: "🌐 Minecraft Connection",
-        description: `Server Address:\n\`${truncate(String(getAddress(server, status)), 1000)}\``
+        description: `Server Address:\n\`${MINECRAFT_ADDRESS}\``
       };
     } catch (error) {
       return {
