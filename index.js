@@ -1050,16 +1050,16 @@ client.on("interactionCreate", async interaction => {
       return;
     }
 
-    if (powerActionRunning) {
-      await interaction.reply({
-        content: "⏳ **Another server power action is already running. Please wait.**",
-        ephemeral: true
-      });
+    if (isPowerActionRunning(FALIX_SERVER_ID)) {
+  await interaction.reply({
+    content: "⏳ **Another server power action is already running. Please wait.**",
+    ephemeral: true
+  });
 
-      return;
-    }
+  return;
+}
 
-    powerActionRunning = true;
+lockPowerAction(FALIX_SERVER_ID);
 
     await interaction.deferReply({ ephemeral: true });
 
