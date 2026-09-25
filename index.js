@@ -52,7 +52,20 @@ if (missing.length) {
 // GLOBAL STATE
 // =====================================================
 
-let powerActionRunning = false;
+// Tracks power actions separately for each Falix server.
+const powerActionsRunning = new Set();
+
+function isPowerActionRunning(serverId) {
+  return powerActionsRunning.has(String(serverId));
+}
+
+function lockPowerAction(serverId) {
+  powerActionsRunning.add(String(serverId));
+}
+
+function unlockPowerAction(serverId) {
+  powerActionsRunning.delete(String(serverId));
+}
 
 // =====================================================
 // DISCORD CLIENT
