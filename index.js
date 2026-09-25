@@ -1214,8 +1214,33 @@ await refreshPanelUntilStable(interaction.message);
     unlockPowerAction(FALIX_SERVER_ID);
   }
 
-  return;
-}
+      return;
+
+    } catch (error) {
+      console.error("Interaction handler error:", error);
+
+      try {
+        if (interaction.deferred || interaction.replied) {
+          await interaction.editReply({
+            content: `❌ **Something went wrong.**\n\n\`${truncate(
+              error.message || "Unknown error",
+              1000
+            )}\``
+          });
+        } else {
+          await interaction.reply({
+            content: `❌ **Something went wrong.**\n\n\`${truncate(
+              error.message || "Unknown error",
+              1000
+            )}\``,
+            ephemeral: true
+          });
+        }
+      } catch (replyError) {
+        console.error("Failed to send interaction error:", replyError);
+      }
+    }
+  });
 
 // =====================================================
 // DISCORD EVENTS
