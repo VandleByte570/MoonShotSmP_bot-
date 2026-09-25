@@ -469,6 +469,16 @@ function formatFalixError(error, action = "power") {
     if (error.actionUrl) {
       text += `\n\n🔗 ${error.actionUrl}`;
     }
+    if (error.code === "verification_required") {
+  let text =
+    "⚠️ **Falix verification is required before starting the server.**";
+
+  if (error.actionUrl) {
+    text += `\n\n🔗 **Verification:** ${error.actionUrl}`;
+  }
+
+  return text;
+    }
 
     return text;
   }
