@@ -1136,87 +1136,95 @@ lockPowerAction(FALIX_SERVER_ID);
       if (action === "restart") {
         if (currentState === "offline") {
           await powerServer("start");
-
-          await interaction.editReply({
-            content:
-              "✅ **Server was offline, so START was sent to Falix.**\n\n⏳ Refreshing panel shortly..."
-          });
-        } else if (currentState === "starting") {
-          await interaction.editReply({ content: "🟡 **Server is already starting.**" });
-          return;
-        } else if (currentState === "stopping") {
-          await interaction.editReply({
-            content: "🟠 **Server is currently stopping. Wait for shutdown to finish.**"
-          });
-          return;
-        } else if (currentState === "online") {
-          await powerServer("restart");
-
-          await interaction.editReply({
-            content: "✅ **RESTART request sent to Falix.**\n\n⏳ Refreshing panel shortly..."
-          });
-        } else {
-          await interaction.editReply({
-            content: `⚪ **Unknown server state:** \`${currentState}\``
-          });
-          return;
-        }
-      } else {
-        // ===========================================
-        // START / STOP POWER REQUEST
-        // ===========================================
-
-        await powerServer(action);
-
-        await interaction.editReply({
-          content: `✅ **${action.toUpperCase()} request sent to Falix.**\n\n⏳ Refreshing panel shortly...`
-        });
-      }
-
-      // =============================================
-      // PANEL POLLING UNTIL STABLE
-      // =============================================
-      // FIX: this is now awaited (instead of a fire-and-forget
-      // `.catch()`) so that `powerActionRunning` stays true for
-      // the whole polling window. refreshPanelUntilStable never
-      // throws (all its internal calls are self-catching), so no
-      // extra try/catch is needed here.
-
-      const panelMessage = interaction.message;
-
-      await refreshPanelUntilStable(panelMessage);
-    } catch (error) {
-      console.error(`Failed to ${action}:`, error);
-
-      await interaction.editReply({ content: formatFalixError(error, action) });
-    } finally {
-      powerActionRunning = false;
-    }
-
-    return;
-  } catch (error) {
-    console.error("Interaction handler error:", error);
-
-    try {
-      const content = "❌ **Something went wrong while processing this interaction.**";
-
-      if (interaction.deferred || interaction.replied) {
-        await interaction.editReply({ content });
-      } else {
-        await interaction.reply({ content, ephemeral: true });
-      }
-    } catch {}
-
-    powerActionRunning = false;
-  }
-});
-
 // =====================================================
 // DISCORD EVENTS
 // =====================================================
 
-client.on("error", error => console.error("Discord error:", error));
-client.on("warn", warning => console.warn("Discord warning:", warning));
+client.on("error", error => {
+  console.error("Discord error:", error);
+});
+
+client.on("warn", warning => {
+  console.warn("Discord warning:", warning);
+});
+
+client.on("debug", message => {
+  console.log("[Discord Debug]", message);
+});
+
+client.on("shardError", error => {
+  console.error("[Discord Shard Error]", error);
+});
+
+process.on("unhandledRejection", error => {
+  console.error("Unhandled rejection:", error);
+});
+
+process.on("uncaughtException", async error => {
+  console.error("Uncaught exception:", error);
+  await shutdown("UNCAUGHT_EXCEPTION");
+});
+
+// =====================================================
+// SHUTDOWN
+// =====================================================
+
+let shuttingDown = false;
+
+async function shutdown(signal) {
+  if (shuttingDown) return;
+
+  shuttingDown = true;
+
+  console.log(`Received ${signal}. Shutting down...`);
+
+  try {
+    httpServer.close();
+  } catch (error) {
+    console.error("HTTP server shutdown error:", error);
+  }
+
+  try {
+    client.destroy();
+  } catch (error) {
+    console.error("Discord shutdown error:", error);
+  }
+
+  process.exit(signal === "UNCAUGHT_EXCEPTION" ? 1 : 0);
+}
+
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+
+// =====================================================
+// LOGIN
+// =====================================================
+
+console.log("Connecting to Discord...");
+
+client.login(DISCORD_TOKEN).catch(error => {
+  console.error("Discord login failed:", error);
+  process.exit(1);
+});
+// =====================================================
+// DISCORD EVENTS
+// =====================================================
+
+client.on("error", error => {
+  console.error("Discord error:", error);
+});
+
+client.on("warn", warning => {
+  console.warn("Discord warning:", warning);
+});
+
+client.on("debug", message => {
+  console.log("[Discord Debug]", message);
+});
+
+client.on("shardError", error => {
+  console.error("[Discord Shard Error]", error);
+});
 
 process.on("unhandledRejection", error => {
   console.error("Unhandled rejection:", error);
