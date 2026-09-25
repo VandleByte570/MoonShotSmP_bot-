@@ -1130,82 +1130,93 @@ lockPowerAction(FALIX_SERVER_ID);
       }
 
       // =============================================
-      // RESTART
-      // =============================================
+// RESTART
+// =============================================
 
-      if (action === "restart") {
-        if (currentState === "offline") {
-          await powerServer("start");
-// =====================================================
-// DISCORD EVENTS
-// =====================================================
+if (action === "restart") {
+  if (currentState === "offline") {
+    await powerServer("start");
 
-client.on("error", error => {
-  console.error("Discord error:", error);
-});
+    await interaction.editReply({
+      content:
+        "✅ **Server was offline, so START was sent to Falix.**\n\n⏳ Refreshing panel shortly..."
+    });
 
-client.on("warn", warning => {
-  console.warn("Discord warning:", warning);
-});
-
-client.on("debug", message => {
-  console.log("[Discord Debug]", message);
-});
-
-client.on("shardError", error => {
-  console.error("[Discord Shard Error]", error);
-});
-
-process.on("unhandledRejection", error => {
-  console.error("Unhandled rejection:", error);
-});
-
-process.on("uncaughtException", async error => {
-  console.error("Uncaught exception:", error);
-  await shutdown("UNCAUGHT_EXCEPTION");
-});
-
-// =====================================================
-// SHUTDOWN
-// =====================================================
-
-let shuttingDown = false;
-
-async function shutdown(signal) {
-  if (shuttingDown) return;
-
-  shuttingDown = true;
-
-  console.log(`Received ${signal}. Shutting down...`);
-
-  try {
-    httpServer.close();
-  } catch (error) {
-    console.error("HTTP server shutdown error:", error);
+    await refreshPanelUntilStable(interaction.message);
+    return;
   }
 
-  try {
-    client.destroy();
-  } catch (error) {
-    console.error("Discord shutdown error:", error);
+  if (currentState === "starting") {
+    await interaction.editReply({
+      content: "🟡 **Server is already starting.**"
+    });
+    return;
   }
 
-  process.exit(signal === "UNCAUGHT_EXCEPTION" ? 1 : 0);
+  if (currentState === "stopping") {
+    await interaction.editReply({
+      content:
+        "🟠 **Server is currently stopping. Wait for shutdown to finish.**"
+    });
+    return;
+  }
+
+  if (currentState !== "online") {
+    await interaction.editReply({
+      content: `⚪ **Unknown server state:** \`${currentState}\``
+    });
+    return;
+  }
+
+  await powerServer("restart");
+
+  await interaction.editReply({
+    content:
+      "✅ **RESTART request sent to Falix.**\n\n⏳ Refreshing panel shortly..."
+  });
+
+  await refreshPanelUntilStable(interaction.message);
+  return;
 }
 
-process.on("SIGINT", () => shutdown("SIGINT"));
-process.on("SIGTERM", () => shutdown("SIGTERM"));
+// =============================================
+// START / STOP REQUEST
+// =============================================
 
-// =====================================================
-// LOGIN
-// =====================================================
+await powerServer(action);
 
-console.log("Connecting to Discord...");
-
-client.login(DISCORD_TOKEN).catch(error => {
-  console.error("Discord login failed:", error);
-  process.exit(1);
+await interaction.editReply({
+  content:
+    `✅ **${action.toUpperCase()} request sent to Falix.**\n\n⏳ Refreshing panel shortly...`
 });
+
+await refreshPanelUntilStable(interaction.message);
+
+  } catch (error) {
+    console.error(`Failed to ${action}:`, error);
+
+    try {
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply({
+          content: formatFalixError(error, action)
+        });
+      } else {
+        await interaction.reply({
+          content: formatFalixError(error, action),
+          ephemeral: true
+        });
+      }
+    } catch (replyError) {
+      console.error("Failed to send power-action error:", replyError);
+    }
+
+  } finally {
+    unlockPowerAction(FALIX_SERVER_ID);
+  }
+
+  return;
+}
+
 // =====================================================
 // DISCORD EVENTS
 // =====================================================
