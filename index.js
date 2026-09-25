@@ -463,21 +463,23 @@ async function powerServer(signal) {
 // =====================================================
 
 function formatFalixError(error, action = "power") {
+  if (error.code === "verification_required") {
+    let text =
+      "⚠️ **Falix verification is required before starting the server.**";
+
+    if (error.actionUrl) {
+      text += `\n\n🔗 **Verification:** ${error.actionUrl}`;
+    }
+
+    return text;
+  }
+
   if (error.code === "ad_required") {
-    let text = "⚠️ **Falix requires an ad/action before this server can be started.**";
+    let text =
+      "⚠️ **Falix requires an ad/action before this server can be started.**";
 
     if (error.actionUrl) {
       text += `\n\n🔗 ${error.actionUrl}`;
-    }
-    if (error.code === "verification_required") {
-  let text =
-    "⚠️ **Falix verification is required before starting the server.**";
-
-  if (error.actionUrl) {
-    text += `\n\n🔗 **Verification:** ${error.actionUrl}`;
-  }
-
-  return text;
     }
 
     return text;
@@ -492,12 +494,12 @@ function formatFalixError(error, action = "power") {
   }
 
   if (error.code === "forbidden" || error.httpStatus === 403) {
-  return (
-    "🔒 **Falix verification is required before you can control this server.**\n\n" +
-    "👉 **Verify here:** https://client.falixnodes.net/\n\n" +
-    "After completing verification, try the Start button again."
-  );
-}
+    return (
+      "🔒 **Falix verification is required before you can control this server.**\n\n" +
+      "👉 **Verify here:** https://client.falixnodes.net/\n\n" +
+      "After completing verification, try the Start button again."
+    );
+  }
 
   if (error.code === "not_found" || error.httpStatus === 404) {
     return "❌ **Falix server not found.** Check `FALIX_SERVER_ID`.";
@@ -923,38 +925,39 @@ client.once("clientReady", async () => {
 client.on("interactionCreate", async interaction => {
   try {
     // =================================================
-    // SLASH COMMANDS
-    // =================================================
+// SLASH COMMANDS
+// =================================================
 
-    if (interaction.isChatInputCommand()) {
-      // ===============================================
-      // /panel
-      // ===============================================
+if (interaction.isChatInputCommand()) {
 
-    
-        await interaction.deferReply();
+  // ===============================================
+  // /panel
+  // ===============================================
 
-        try {
-          await interaction.editReply(await buildPanel());
-        } catch (error) {
-          console.error("Panel error:", error);
+  if (interaction.commandName === "panel") {
+    await interaction.deferReply();
 
-          await interaction.editReply({
-            content: `❌ **Failed to load Falix server information.**\n\n${truncate(
-              error.message,
-              1000
-            )}`
-          });
-        }
+    try {
+      await interaction.editReply(await buildPanel());
+    } catch (error) {
+      console.error("Panel error:", error);
 
-        return;
-      }
+      await interaction.editReply({
+        content: `❌ **Failed to load Falix server information.**\n\n${truncate(
+          error.message,
+          1000
+        )}`
+      });
+    }
 
-      // ===============================================
-      // /ask
-      // ===============================================
+    return;
+  }
 
-      if (interaction.commandName === "ask") {
+  // ===============================================
+  // /ask
+  // ===============================================
+
+  if (interaction.commandName === "ask") {
         const question = interaction.options.getString("question", true);
 
         await interaction.deferReply();
@@ -1022,19 +1025,6 @@ client.on("interactionCreate", async interaction => {
     if (interaction.customId === "minecraft_refresh") {
       await interaction.deferUpdate();
       await refreshPanelMessage(interaction.message);
-      return;
-    }
-
-    // ===============================================
-    // EVERYTHING BELOW THIS POINT REQUIRES MANAGE SERVER
-    // ===============================================
-
-    if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
-      await interaction.reply({
-        content: "🔒 **You need Manage Server permission to use this control panel.**",
-        ephemeral: true
-      });
-
       return;
     }
 
