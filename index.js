@@ -492,8 +492,12 @@ function formatFalixError(error, action = "power") {
   }
 
   if (error.code === "forbidden" || error.httpStatus === 403) {
-    return "🔒 **Falix rejected the request. Make sure the API key has `servers:power` and the required server control permission.**";
-  }
+  return (
+    "🔒 **Falix verification is required before you can control this server.**\n\n" +
+    "👉 **Verify here:** https://client.falixnodes.net/\n\n" +
+    "After completing verification, try the Start button again."
+  );
+}
 
   if (error.code === "not_found" || error.httpStatus === 404) {
     return "❌ **Falix server not found.** Check `FALIX_SERVER_ID`.";
@@ -822,7 +826,6 @@ async function registerCommands() {
     new SlashCommandBuilder()
       .setName("panel")
       .setDescription("Show the Minecraft server control panel")
-      .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild.toString())
       .setDMPermission(false)
       .toJSON(),
 
@@ -928,16 +931,7 @@ client.on("interactionCreate", async interaction => {
       // /panel
       // ===============================================
 
-      if (interaction.commandName === "panel") {
-        if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
-          await interaction.reply({
-            content: "🔒 **You need Manage Server permission to use `/panel`.**",
-            ephemeral: true
-          });
-
-          return;
-        }
-
+    
         await interaction.deferReply();
 
         try {
